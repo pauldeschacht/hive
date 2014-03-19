@@ -8,4 +8,5 @@ build-eclipse
 *.launch
 *~
 metastore_db
-cdb.build.propertiescdh.build.properties
+cdh.build.properties
+
