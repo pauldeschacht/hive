@@ -37,6 +37,10 @@
                 transitive="false"/>
     <dependency org="commons-logging" name="commons-logging-api" rev="${commons-logging-api.version}"
                 transitive="false"/>
+    <dependency org="javax.ws.rs" name="javax.ws.rs-api" rev="2.0" transitive="false"/>
+<dependency org="org.glassfish.jersey.core" name="jersey-common"
+            rev="2.7" transitive="false"/>    
+<dependency org="org.glassfish.jersey.core" name="jersey-client" rev="2.7" transitive="false"/>
 
     <!-- Test Dependencies -->
     <dependency org="junit" name="junit" rev="${junit.version}" conf="test->default" />

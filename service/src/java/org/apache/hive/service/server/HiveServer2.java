@@ -27,6 +27,7 @@ import org.apache.hive.common.util.HiveStringUtils;
 import org.apache.hive.service.CompositeService;
 import org.apache.hive.service.cli.CLIService;
 import org.apache.hive.service.cli.thrift.ThriftCLIService;
+import org.apache.hive.service.cli.thrift.ThriftCLIServiceDelegator;
 
 /**
  * HiveServer2.
@@ -41,19 +42,26 @@ public class HiveServer2 extends CompositeService {
   private ThriftCLIService thriftCLIService;
 
   public HiveServer2() {
-    super("HiveServer2");
+    super("MultiTenantHiveServer2");
   }
 
 
   @Override
   public synchronized void init(HiveConf hiveConf) {
-    cliService = new CLIService();
-    addService(cliService);
+    
+      String multitenant = hiveConf.get("multitenant.delegate.host");
+      if (multitenant == null) {
+        cliService = new CLIService();
+        addService(cliService);
 
-    thriftCLIService = new ThriftCLIService(cliService);
-    addService(thriftCLIService);
-
-    super.init(hiveConf);
+        thriftCLIService = new ThriftCLIService(cliService);
+        addService(thriftCLIService);
+      }
+      else {
+          thriftCLIService = new ThriftCLIServiceDelegator();
+          addService(thriftCLIService);
+      }
+      super.init(hiveConf);
   }
 
   @Override
