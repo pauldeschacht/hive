@@ -104,10 +104,15 @@ The instance name can also be set on the command line. (The command line overwri
   export MULTITENANT_INSTANCE=value
 ```
 
-## Set up one server instance per client
+### Limit to a single database
+
+By setting the environment variable MULTITENANT_DATABASE, it is possible to restrict the queries to that single database.
+
+### Set up one server instance per client
 
 ```bash
 export MULTITENANT_INSTANCE=client_XXX
+export MULTITENANT_DATABASE=name_of_database
 export HIVE_SERVER2_THRIFT_PORT=port_client_XXX
 hive --service hiveserver2
 ```

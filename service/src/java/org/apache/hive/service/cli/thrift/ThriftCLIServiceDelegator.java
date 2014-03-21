@@ -67,6 +67,7 @@ public class ThriftCLIServiceDelegator extends ThriftCLIService implements TCLIS
   private static RemoteAccessControl remoteAccessControl = null;
   private TCLIService.Client delegate;
   private String instanceName = null;
+  private String restrictDatabase = null;
   private SessionManagerDelegator sessions;
   
   private int portNum;
@@ -121,6 +122,12 @@ public class ThriftCLIServiceDelegator extends ThriftCLIService implements TCLIS
         instanceName = hiveConf.get("multitenant.instance");
     }
     LOG.info("Instance name: " + instanceName);
+
+    restrictDatabase = System.getenv("MULTITENANT_DATABASE");
+    if(restrictDatabase == null) {
+        restrictDatabase = hiveConf.get("multitenant.database");
+    }
+    LOG.info("Restrict to database: " + restrictDatabase);
 
     super.init(hiveConf);
   }
@@ -187,6 +194,26 @@ public class ThriftCLIServiceDelegator extends ThriftCLIService implements TCLIS
   public TGetInfoResp GetInfo(TGetInfoReq req) throws TException {
       return delegate.GetInfo(req);
   }
+    
+  private String overwriteDatabase(String statement) {
+      if(restrictDatabase == null) {
+          return statement;
+      }
+      String sql = statement.toLowerCase();
+      if (sql.contains("use ")) {
+          return "USE " + restrictDatabase;
+      }
+      if(sql.contains("show ")) {
+          if (sql.contains("databases")) {
+              return "SHOW DATABASES LIKE `" + restrictDatabase + "`";
+          }
+          if (sql.contains("schemas")) {
+              return "SHOW SCHEMAS LIKE `" + restrictDatabase + "`";
+          }
+          return sql.replace("default",restrictDatabase);
+      }
+      return sql.replace("default",restrictDatabase);
+  }
 
   @Override
   public TExecuteStatementResp ExecuteStatement(TExecuteStatementReq req) throws TException {
@@ -194,8 +221,10 @@ public class ThriftCLIServiceDelegator extends ThriftCLIService implements TCLIS
       SessionManagerDelegator.SessionInfo  sessionInfo = sessions.getSession(sessionHandle);
       if(sessionInfo != null) {
           String sql = req.getStatement();
+          sql = overwriteDatabase(sql);
           LOG.info("Execute [" + sql + "] for user [" + sessionInfo.username + "] at " + sessionInfo.ip);
-          if (remoteAccessControl.hasAccess(sessionInfo.username, req.getStatement()) == true) {
+          if (remoteAccessControl.hasAccess(sessionInfo.username, sql) == true) {
+              req.setStatement(sql);
               return delegate.ExecuteStatement(req);
           }
           else {
